@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Trustchain - Blockchain Credential Verification</title>
+        <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+        <style>
+            html { scroll-behavior: smooth; }
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body, html { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+
+            .hero { position: relative; height: 100vh; width: 100%; overflow: hidden; }
+            .hero video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; }
+
+            header {
+                position: fixed; top: 0; width: 100%; display: flex;
+                justify-content: space-between; align-items: center;
+                padding: 20px 50px; background: rgba(0,0,0,0.5);
+                color: white; z-index: 1000; transition: all 0.3s ease;
+            }
+            header.scrolled {
+                background: rgba(0,0,0,0.9);
+                box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            }
+
+            header .logo { font-size: 1.8em; font-weight: bold; display: flex; align-items: center; }
+            header .logo i { margin-right: 10px; color: #f1c40f; }
+
+            header nav a {
+                color: white; text-decoration: none; margin: 0 15px;
+                font-size: 1em; transition: 0.3s;
+            }
+            header nav a:hover { color: #f1c40f; }
+
+            .hero .content {
+                position: absolute; top: 50%; left: 50%;
+                transform: translate(-50%, -50%); text-align: center;
+                background: rgba(0, 0, 0, 0.5); padding: 40px;
+                border-radius: 20px; color: white; width: 90%;
+                max-width: 800px; /* Added max-width for better control */
+            }
+            .hero .content h1 { font-size: 3em; margin-bottom: 20px; }
+            .hero .content p { font-size: 1.2em; margin-bottom: 30px; }
+            .hero .content .btns {
+                display: flex; justify-content: center; gap: 40px;
+                flex-wrap: wrap;
+            }
+            .hero .content button {
+                padding: 12px 65px; font-size: 1em;
+                background: #f1c40f; border: none; border-radius: 8px;
+                cursor: pointer; transition: 0.3s;
+            }
+            .hero .content button:hover { background: #d4ac0d; }
+
+            section {
+                padding: 80px 20px; text-align: center;
+                max-width: 1200px; margin: auto;
+            }
+            section h2 { font-size: 2.2em; margin-bottom: 20px; }
+            section p {
+                max-width: 800px; margin: 0 auto 20px;
+                font-size: 1em; line-height: 1.6;
+                color: #555; /* Default text color for sections */
+            }
+            section h2 i { /* Style icons in section headers */
+                margin-right: 10px;
+                color: #f1c40f;
+            }
+
+            .team-container, .services-container {
+    display: flex; justify-content: center;
+    flex-wrap: wrap;
+    gap: 30px; /* <--- CHANGE THIS */
+    margin-top: 40px;
+}
+
+            /* Base Service Box Style */
+            .service-box {
+                background: #f7f7f7; border-radius: 12px; padding: 20px;
+                width: 100%; max-width: 250px; text-align: center;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+            }
+             .service-box i {
+                 display: block;
+                 font-size: 2.5em;
+                 margin-bottom: 15px;
+                 color: #f1c40f;
+             }
+
+            /* --- Team Member Enhancement Styles --- */
+
+            .team-member {
+                background: #f7f7f7;
+                border-radius: 12px;
+                padding: 20px;
+                width: 100%;
+                max-width: 260px; /* Slightly wider to accommodate info */
+                text-align: center;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+                /* Updated Transition */
+                transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+                position: relative; /* Needed for z-index on hover */
+                overflow: hidden; /* Clip content initially */
+            }
+
+            /* Remove the old combined hover effect - Replaced below */
+            /*
+            .team-member:hover, .service-box:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 0 25px rgba(0,0,0,0.2);
+            }
+            */
+
+            /* Updated Image Styling */
+            .team-member img {
+                width: 150px; /* Fixed width */
+                height: 150px; /* Fixed height */
+                object-fit: cover; /* Crop image nicely */
+                border-radius: 50%; /* Make images circular */
+                margin-bottom: 15px; /* Space below image */
+                border: 4px solid white; /* Optional: add a border */
+                box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+                display: inline-block; /* Ensure margin works correctly */
+            }
+
+            .team-member h3 {
+                margin-bottom: 5px;
+                font-size: 1.2em;
+                color: #333;
+            }
+
+            .team-member p.role { /* Style the role paragraph */
+                font-size: 0.95em;
+                color: #666;
+                margin-bottom: 15px; /* Space before additional info appears */
+            }
+            .team-member p.role i {
+                margin-right: 5px;
+                color: #f1c40f; /* Match theme color */
+            }
+
+
+            /* Styles for the hidden additional info */
+            .additional-info {
+                margin-top: 15px;
+                opacity: 0; /* Hidden by default */
+                max-height: 0; /* Collapsed by default */
+                overflow: hidden; /* Hide content when collapsed */
+                transition: opacity 0.4s ease-in-out, max-height 0.5s ease-in-out; /* Smooth reveal */
+                font-size: 0.9em;
+                color: #555;
+                text-align: left; /* Align text left for readability */
+                padding: 0 10px; /* Add some padding */
+            }
+            .additional-info p {
+                margin-bottom: 8px; /* Space between lines */
+                line-height: 1.4;
+                word-wrap: break-word; /* Prevent long emails/links from overflowing */
+            }
+            .additional-info p.full-name {
+                font-weight: bold;
+                color: #333;
+                text-align: center; /* Center full name if desired */
+                margin-bottom: 12px;
+            }
+
+            .additional-info a {
+                color: #555;
+                text-decoration: none;
+                transition: color 0.3s ease;
+            }
+            .additional-info a:hover {
+                color: #f1c40f; /* Highlight links on hover */
+            }
+
+            .additional-info i { /* Styling for icons within additional info */
+                margin-right: 8px;
+                width: 18px; /* Align icons nicely */
+                text-align: center;
+                color: #f1c40f; /* Theme color for icons */
+            }
+
+            /* Styles for social media icons */
+            .social-links {
+                display: flex;
+                justify-content: center; /* Center icons */
+                gap: 20px; /* Space between icons */
+                margin-top: 15px;
+                padding-top: 10px;
+                border-top: 1px solid #eee; /* Separator line */
+            }
+
+            .social-links a {
+                color: #777; /* Default icon color */
+                font-size: 1.6em; /* Icon size */
+                transition: color 0.3s ease, transform 0.2s ease;
+            }
+
+            .social-links a:hover {
+                color: #f1c40f; /* Icon color on hover */
+                transform: scale(1.1); /* Slight scale effect on icon hover */
+            }
+
+
+            /* --- The Hover Effect --- */
+            .team-member:hover {
+                transform: scale(1.05); /* Scale up the card */
+                box-shadow: 0 10px 30px rgba(0,0,0,0.2); /* Enhance shadow */
+                z-index: 10; /* Bring hovered card to the front */
+                overflow: visible; /* Allow scaled content/shadow to show */
+            }
+
+            .team-member:hover .additional-info {
+                opacity: 1; /* Make info visible */
+                max-height: 250px; /* Expand to show content - adjust if needed */
+            }
+
+            /* Optional: Add back a specific rule for service-box hover */
+             .service-box:hover {
+                 transform: translateY(-5px);
+                 box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+             }
+
+            /* --- End Team Member Enhancement --- */
+
+            #backToTop {
+                position: fixed; bottom: 30px; right: 30px;
+                background: #f1c40f; /* Theme color */
+                color: #333; /* Darker text */
+                padding: 10px 12px; /* Adjust padding */
+                border: none;
+                border-radius: 50%; /* Circular */
+                font-size: 1.4em;
+                cursor: pointer; display: none;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+                transition: background-color 0.3s ease;
+            }
+            #backToTop:hover { background: #d4ac0d; } /* Darken on hover */
+
+            footer {
+                text-align: center; padding: 20px; /* More padding */
+                background: #1a1a1a; /* Slightly lighter dark */
+                color: #aaa; /* Lighter text */
+                position: relative;
+                margin-top: 50px; /* Add space above footer */
+            }
+
+            iframe {
+                width: 100%;
+                border: none; /* Remove default border */
+                border-radius: 12px; /* Match card radius */
+                box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15); /* Softer shadow */
+                transition: box-shadow 0.3s ease;
+            }
+            iframe:hover {
+                 box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2); /* Slightly enhance shadow on hover */
+            }
+
+            img {
+                max-width: 100%;
+                height: auto;
+                display: block; /* Prevent extra space below images */
+            }
+
+             /* Contact Form Styles */
+            #contact form {
+                 background-color: #fff;
+                 padding: 30px;
+                 border-radius: 12px; /* Match card radius */
+                 box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15); /* Match iframe/card shadow */
+                 width: 100%;
+                 max-width: 500px; /* Slightly wider form */
+                 margin: 30px auto;
+                 text-align: left;
+            }
+             #contact form h2 { /* Style form header */
+                text-align: center;
+                color: #f1c40f;
+                margin-bottom: 25px;
+             }
+             #contact form label {
+                 display: block;
+                 margin-bottom: 8px;
+                 color: #333;
+                 font-weight: bold;
+                 font-size: 0.9em;
+             }
+             #contact form input[type="text"],
+             #contact form input[type="email"],
+             #contact form input[type="tel"],
+             #contact form textarea {
+                 width: 100%; /* Use 100% width */
+                 padding: 12px; /* More padding */
+                 border: 1px solid #ddd;
+                 border-radius: 6px; /* Softer radius */
+                 box-sizing: border-box;
+                 font-size: 1em;
+                 margin-bottom: 15px; /* Consistent spacing */
+             }
+            #contact form textarea {
+                 resize: vertical;
+                 min-height: 120px;
+             }
+             #contact form button {
+                 background-color: #f1c40f;
+                 color: #333;
+                 padding: 12px 25px; /* Adjust padding */
+                 border: none;
+                 border-radius: 6px;
+                 cursor: pointer;
+                 font-size: 1.1em; /* Slightly larger font */
+                 transition: background-color 0.3s ease;
+                 width: 100%;
+                 font-weight: bold;
+                 margin-top: 10px; /* Space above button */
+            }
+            #contact form button:hover {
+                background-color: #d4ac0d;
+            }
+            #contact .contact-links a { /* Style email links below form */
+                font-size:1.1em;
+                color:#f1c40f;
+                text-decoration:none; /* Remove underline */
+                display: inline-block;
+                margin: 5px 15px;
+                transition: color 0.3s ease;
+            }
+             #contact .contact-links a:hover {
+                 color: #d4ac0d; /* Darken on hover */
+                 text-decoration: underline;
+             }
+             #contact .contact-links {
+                 margin-top: 30px;
+                 text-align: center;
+             }
+
+
+            /* Dark Mode Toggle Button */
+            #darkModeToggle {
+                position:fixed;
+                bottom:80px; /* Position above back-to-top */
+                right:30px;
+                padding: 10px; /* Adjust padding */
+                width: 45px; /* Make it square */
+                height: 45px;
+                border-radius:50%; /* Circular */
+                background:#333; /* Dark background */
+                color: #f1c40f; /* Theme color icon */
+                border: none;
+                cursor:pointer;
+                box-shadow:0 2px 8px rgba(0,0,0,0.3);
+                font-size: 1.5em; /* Icon size */
+                display: flex; /* Center icon */
+                align-items: center;
+                justify-content: center;
+                transition: background-color 0.3s, color 0.3s;
+            }
+             #darkModeToggle:hover {
+                 background: #555;
+             }
+
+            /* Chatbot Styles - Add if missing */
+            .chatbot-toggler { /* Style the button itself */
+                 position: fixed;
+                 bottom: 30px;
+                 left: 30px;
+                 width: 50px;
+                 height: 50px;
+                 background-color: #f1c40f;
+                 border-radius: 50%;
+                 border: none;
+                 cursor: pointer;
+                 display: flex;
+                 align-items: center;
+                 justify-content: center;
+                 box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+                 z-index: 998;
+            }
+             /* Add icon inside toggler */
+             .chatbot-toggler::before {
+                 content: '\f4ad'; /* Font Awesome chat icon */
+                 font-family: 'Font Awesome 6 Free';
+                 font-weight: 900;
+                 font-size: 1.5em;
+                 color: #333;
+             }
+
+            .chatbox-window {
+                 position: fixed;
+                 bottom: 100px;
+                 left: 30px;
+                 width: 350px;
+                 height: 450px;
+                 background: white;
+                 border-radius: 15px;
+                 box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                 display: flex;
+                 flex-direction: column;
+                 overflow: hidden;
+                 opacity: 0;
+                 transform: scale(0.9);
+                 transition: opacity 0.3s ease, transform 0.3s ease;
+                 visibility: hidden;
+                 z-index: 999;
+             }
+            .chatbox-window.active { /* Show popup */
+                opacity: 1;
+                transform: scale(1);
+                visibility: visible;
+            }
+             .chatbox-window h3 {
+                 background-color: #f1c40f;
+                 color: #333;
+                 padding: 15px;
+                 font-size: 1.1em;
+                 display: flex;
+                 justify-content: space-between;
+                 align-items: center;
+             }
+             .chatbox-window .close-btn {
+                 background: none;
+                 border: none;
+                 font-size: 1.5em;
+                 cursor: pointer;
+                 color: #333;
+             }
+             #chat-output {
+                 flex-grow: 1;
+                 padding: 15px;
+                 overflow-y: auto;
+                 background-color: #f9f9f9;
+             }
+             .message {
+                 margin-bottom: 12px;
+                 padding: 8px 12px;
+                 border-radius: 10px;
+                 max-width: 80%;
+                 word-wrap: break-word;
+             }
+             .user-message {
+                 background-color: #e0e0e0;
+                 margin-left: auto;
+                 border-bottom-right-radius: 0;
+             }
+             .bot-message {
+                 background-color: #f1f0f0;
+                 margin-right: auto;
+                 border-bottom-left-radius: 0;
+             }
+             #input-area {
+                 display: flex;
+                 padding: 10px;
+                 border-top: 1px solid #eee;
+             }
+             #user-input {
+                 flex-grow: 1;
+                 border: 1px solid #ddd;
+                 border-radius: 20px;
+                 padding: 8px 15px;
+                 margin-right: 10px;
+                 outline: none;
+             }
+             #send-button {
+                 background-color: #f1c40f;
+                 color: #333;
+                 border: none;
+                 border-radius: 50%;
+                 width: 40px;
+                 height: 40px;
+                 cursor: pointer;
+                 font-size: 1.2em;
+                 display: flex;
+                 align-items: center;
+                 justify-content: center;
+             }
+              /* Send button icon */
+              #send-button::before {
+                  content: '\f1d8'; /* Font Awesome paper plane */
+                  font-family: 'Font Awesome 6 Free';
+                  font-weight: 900;
+              }
+
+            /* Responsive Layouts */
+            @media (max-width: 1024px) {
+                header {
+                    padding: 15px 30px;
+                }
+                .hero .content h1 { font-size: 2.5em; } /* Adjust font size */
+                .hero .content p { font-size: 1.1em; }
+                .hero .content button { padding: 10px 40px; } /* Adjust button padding */
+            }
+
+            @media (max-width: 768px) {
+                .hero .content { padding: 30px; width: 90%; }
+                .hero .content h1 { font-size: 2em; }
+                .team-member, .service-box {
+                    width: calc(50% - 15px); /* Two columns on tablets */
+                    max-width: none; /* Remove max-width */
+                 }
+                iframe { height: 350px !important; } /* Adjust map height */
+
+                header nav {
+                    display: none; /* Simple hiding for now */
+                }
+                /* Adjust button positions */
+                 #backToTop { bottom: 20px; right: 20px; }
+                 #darkModeToggle { bottom: 80px; right: 20px; }
+                 .chatbot-toggler { bottom: 20px; left: 20px; }
+                 .chatbox-window { bottom: 80px; left: 20px; width: calc(100% - 40px); max-width: 350px; }
+            }
+
+            @media (max-width: 480px) {
+                 /* Stack team members and service boxes */
+                 .team-member, .service-box {
+                     width: 90%; /* Almost full width */
+                     max-width: 300px; /* Limit max width */
+                     margin-left: auto;
+                     margin-right: auto;
+                 }
+
+                 .hero .content h1 { font-size: 1.8em; }
+                 .hero .content p { font-size: 1em; }
+                 .hero .content .btns {
+                    flex-direction: column;
+                    gap: 20px;
+                    align-items: center; /* Center buttons */
+                 }
+                 .hero .content .btns button {
+                    width: 80%; /* Make buttons wider */
+                    padding: 12px;
+                 }
+                 #contact form { max-width: 90%; } /* Adjust form width */
+
+                 /* Further adjust button positions */
+                 #backToTop { bottom: 15px; right: 15px; }
+                 #darkModeToggle { bottom: 75px; right: 15px; }
+                 .chatbot-toggler { bottom: 15px; left: 15px; }
+                 .chatbox-window { bottom: 75px; left: 15px; width: calc(100% - 30px); height: 60%; }
+            }
+        </style>
+    </head>
+<body>
+    <div class="hero">
+        <video autoplay muted loop>
+            <source src="2314-157183704.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        <header>
+            <div class="logo"><i class="fas fa-cubes"></i> Trustchain</div>
+            <nav>
+                <a href="#">Home</a>
+                <a href="#verify">Verify</a>
+                <a href="#services">Services</a>
+                <a href="#about">About</a>
+                <a href="#team">Team</a>
+                <a href="#contact">Contact</a>
+                </nav>
+             </header>
+
+        <div class="content">
+            <h1>Verify Credentials with Blockchain</h1>
+            <p>Secure, Transparent, and Decentralized Proofs</p>
+            <div class="btns">
+                <button onclick="document.getElementById('verify').scrollIntoView({behavior: 'smooth'})">Verify Now</button>
+                 </div>
+        </div>
+    </div>
+
+    <section id="verify">
+        <h2><i class="fas fa-search"></i> Verify Your Credential</h2>
+        <p>Use our verification engine to authenticate your certificates with blockchain technology.</p>
+        </section>
+    <section id="services">
+        <h2><i class="fas fa-handshake"></i> Our Services</h2>
+        <p>Trustchain offers a range of services designed for educational institutions, employers, and individuals:</p>
+        <div class="services-container">
+            <div class="service-box"><i class="fas fa-certificate"></i> Credential Verification</div>
+            <div class="service-box"><i class="fas fa-clock"></i> Document Timestamping</div>
+            <div class="service-box"><i class="fas fa-link"></i> Smart Contract Integration</div>
+            <div class="service-box"><i class="fas fa-chalkboard-teacher"></i> Blockchain Consulting</div>
+        </div>
+    </section>
+
+    <section id="about">
+        <h2><i class="fas fa-info-circle"></i> About Our Platform</h2>
+        <p>We offer a seamless verification service powered by blockchain, ensuring your credentials are tamper-proof, instantly verifiable, and future-ready. Features include real-time status, immutable records, decentralized storage, and global accessibility.</p>
+    </section>
+
+    <section id="team">
+        <h2><i class="fas fa-users"></i> Our Team</h2>
+        <div class="team-container">
+
+            <div class="team-member">
+                <img src="images/abtahi.jpg" alt="Abtahi Sayed"> <h3>Abtahi Sayed</h3>
+                <p class="role"><i class="fas fa-code"></i> Frontend Developer</p>
+                <div class="additional-info">
+                    <p class="full-name">Abtahi Sayed</p> <p><a href="tel:+918147877836" title="Contact Phone"><i class="fas fa-phone-alt"></i> +91 8147877836</a></p>
+                    <p><a href="mailto:abtahisayed2004@gmail.com" title="Contact Email"><i class="fas fa-envelope"></i> abtahisayed2004@gmail.com</a></p>
+                    <div class="social-links">
+                        <a href="https://www.linkedin.com/in/abtahi-sayed-6723a22a9/" target="_blank" title="LinkedIn Profile"><i class="fab fa-linkedin"></i></a>
+                        <a href="https://www.instagram.com/ab._.say/" target="_blank" title="Instagram Profile"><i class="fab fa-instagram"></i></a>
+                        <a href="https://github.com/Spikeeeeeeeeeeee" target="_blank" title="GitHub Profile"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="team-member">
+                <img src="images/aditya.jpg" alt="Aditya Viroopaxi">
+                <h3>Aditya Viroopaxi</h3>
+                <p class="role"><i class="fas fa-code"></i> Frontend Developer</p>
+                 <div class="additional-info">
+                    <p class="full-name">Aditya Viroopaxi</p> <p><a href="tel:+91513248045" title="Contact Phone"><i class="fas fa-phone-alt"></i> +91 9513248045</a></p>
+                    <p><a href="mailto:aviroopaxi@gmail.com" title="Contact Email"><i class="fas fa-envelope"></i> aviroopaxi@gmail.com</a></p>
+                    <div class="social-links">
+                        <a href="https://www.linkedin.com/in/aditya-viroopaxi-68190527" target="_blank" title="LinkedIn Profile"><i class="fab fa-linkedin"></i></a>
+                        <a href="https://www.instagram.com/gt_red_devil_" target="_blank" title="Instagram Profile"><i class="fab fa-instagram"></i></a>
+                        <a href="https://github.com/AdityaViroopaxi" target="_blank" title="GitHub Profile"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="team-member">
+                <img src="images/shri.jpg" alt="Shrilakshmi Kakati">
+                <h3>Shrilakshmi Kakati</h3>
+                <p class="role"><i class="fas fa-server"></i> Backend Developer</p>
+                 <div class="additional-info">
+                    <p class="full-name">Shrilakshmi Kakati</p> <p><a href="tel:+917676106944" title="Contact Phone"><i class="fas fa-phone-alt"></i> +91 7676106944</a></p>
+                    <p><a href="mailto:shrilakshmikakati@gmail.com" title="Contact Email"><i class="fas fa-envelope"></i> shrilakshmikakati@gmail.com</a></p>
+                    <div class="social-links">
+                        <a href="https://www.linkedin.com/in/shrilakshmi-kakati-5435b8244/" target="_blank" title="LinkedIn Profile"><i class="fab fa-linkedin"></i></a>
+                        <a href="https://www.instagram.com/ishrilakshmik/" target="_blank" title="Instagram Profile"><i class="fab fa-instagram"></i></a>
+                        <a href="https://github.com/shrilakshmikakati" target="_blank" title="GitHub Profile"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="team-member">
+                <img src="images/tejal.jpg" alt="Tejal Kavatage"> <h3>Tejal Kavatage</h3>
+                <p class="role"><i class="fas fa-server"></i> Backend Developer</p>
+                 <div class="additional-info">
+                    <p class="full-name">Tejal Kavatage (Full Name)</p> <p><a href="tel:+917090932318" title="Contact Phone"><i class="fas fa-phone-alt"></i> +91 7090932318</a></p>
+                    <p><a href="mailto:tejalkk095@gmail.com" title="Contact Email"><i class="fas fa-envelope"></i> tejalkk095@gmail.com</a></p>
+                    <div class="social-links">
+                        <a href="https://www.linkedin.com/in/tejal-kavatage-033b32307/" target="_blank" title="LinkedIn Profile"><i class="fab fa-linkedin"></i></a>
+                        <a href="https://www.instagram.com/tejalk_018?igsh=MXhkYXQ5cDNsNjRnYg==" target="_blank" title="Instagram Profile"><i class="fab fa-instagram"></i></a>
+                        <a href="https://github.com/tejalkavatage" target="_blank" title="GitHub Profile"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+            </div>
+
+        </div> </section>
+    <section id="location">
+        <h2><i class="fas fa-map-marker-alt"></i> Our Location</h2>
+        <div style="width: 100%; height: 400px; border-radius: 12px; overflow: hidden; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15); margin-bottom: 20px;">
+            <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3887.676172106355!2d77.5527698148222!3d12.992658190841486!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bae1610a8b5f51f%3A0xcf491497776b9c!2sBrigade%20Gateway!5e0!3m2!1sen!2sin!4v1678886048777!5m2!1sen!2sin"
+                width="100%" height="400" style="border:0;" allowfullscreen="" loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade">
+            </iframe>
+        </div>
+        <p style="font-size: 1.1em; color: #555;">BRIGADE GATEWAY, Dr Rajkumar Rd, Rajajinagar, Bengaluru, Karnataka 560055.</p> </section>
+
+    <section id="contact">
+        <h2><i class="fas fa-envelope"></i> Contact Us</h2>
+        <p>Reach out for integration, questions, or demos. We're here to help you navigate the future of credential verification!</p>
+        <form action="https://api.web3forms.com/submit" method="POST">
+            <input type="hidden" name="access_key" value="7238cb86-69e0-4a39-9124-289a107e0756">
+
+            <h2><i class="fas fa-paper-plane"></i> Get In Touch</h2> <div>
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name" placeholder="Your Name" required>
+            </div>
+
+            <div>
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" placeholder="Your Email" required>
+            </div>
+
+            <div>
+                <label for="phone">Phone Number: (Optional)</label>
+                <input type="tel" id="phone" name="phone" placeholder="Your Phone Number">
+            </div>
+
+            <div>
+                <label for="subject">Subject: (Optional)</label>
+                <input type="text" id="subject" name="subject" placeholder="Subject of your message">
+            </div>
+
+            <div>
+                <label for="message">Message:</label>
+                <textarea id="message" name="message" rows="5" placeholder="Your Message" required></textarea>
+            </div>
+
+            <input type="checkbox" name="botcheck" class="hidden" style="display: none;">
+
+            <button type="submit">Submit Form</button>
+        </form>
+        <div class="contact-links">
+             <a href="mailto:info@Trustchain.io"><i class="fas fa-envelope"></i> info@Trustchain.io</a>
+             <a href="mailto:support@Trustchain.io"><i class="fas fa-headset"></i> support@Trustchain.io</a>
+        </div>
+    </section>
+
+    <footer>
+        © 2025 Trustchain — All Rights Reserved
+    </footer>
+
+    <button id="backToTop" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" title="Back to Top">
+        <i class="fas fa-arrow-up"></i> </button>
+    <button id="darkModeToggle" title="Toggle Dark Mode">🌙</button>
+
+    <button class="chatbot-toggler" id="openChatbotBtn" title="Open Chat"></button>
+    <div class="chatbox-window" id="chatbotPopup">
+        <h3>
+            Chat Support
+            <button class="close-btn" id="closeChatbotBtn" title="Close Chat">×</button>
+       </h3>
+       <div id="chat-output">
+            <div class="message bot-message">Hello! How can I help you with blockchain today?</div>
+        </div>
+       <div id="input-area">
+            <input type="text" id="user-input" placeholder="Ask about blockchain...">
+            <button id="send-button" title="Send Message"></button>
+       </div>
+    </div>
+
+<script>
+    // --- Blockchain Data (Knowledge Base) ---
+    const blockchainData = {
+        "blockchain": "A blockchain is a decentralized, distributed, and immutable digital ledger used to record transactions across many computers so that the record cannot be altered retroactively without the alteration of all subsequent blocks and the consensus of the network.",
+        "what is blockchain": "It's like a shared, digital notebook that's duplicated and spread across a network of computers. When a new transaction happens, it's added as a 'block' to this notebook. Each block is cryptographically linked to the previous one, forming a 'chain'. This makes it very secure and hard to tamper with because changing one block would require changing all the blocks after it, which needs agreement from most of the network (consensus).",
+        "node": "A node is simply a computer connected to the blockchain network. It helps maintain the network by keeping a copy of the blockchain ledger and, depending on the type, validating transactions or creating new blocks.",
+        "miner": "In Proof-of-Work blockchains (like Bitcoin historically), miners are special nodes that use powerful computers to solve complex math puzzles. The first one to solve the puzzle gets to add the next block of transactions to the chain and is usually rewarded with cryptocurrency. It's a way to secure the network and create new coins.",
+        "validator": "In Proof-of-Stake blockchains (like current Ethereum), validators are nodes chosen to propose and confirm new blocks. They are chosen based on the amount of cryptocurrency they 'stake' or lock up as collateral. If they act dishonestly, they can lose their staked coins ('slashing'). This is generally more energy-efficient than mining.",
+        "block": "Think of a block as a page in the digital notebook (blockchain). It contains a list of confirmed transactions, a timestamp showing when it was created, and a unique code (hash) that links it to the previous block in the chain.",
+        "genesis block": "This is the very first block ever created for a particular blockchain. It's the foundation of the chain and has no block before it.",
+        "consensus": "Consensus is the process by which the nodes on a blockchain network agree on the current state of the ledger and which new transactions/blocks are valid. It ensures everyone has the same, accurate version of the blockchain. Different blockchains use different rules (consensus mechanisms like Proof-of-Work or Proof-of-Stake) to achieve this agreement.",
+        "fork": "A fork happens when a blockchain splits into two separate chains. This can occur due to a software update or a disagreement among network participants. A 'soft fork' is like an optional update where old nodes can still work with the new rules. A 'hard fork' is a major change where old nodes are incompatible, forcing participants to choose which chain to follow.",
+        "hash": "A hash is like a unique digital fingerprint for data. A cryptographic hash function takes any input data (like the transactions in a block) and produces a fixed-size string of characters (the hash). Even a tiny change in the input will create a completely different hash. Blockchains use hashes to link blocks securely and ensure data hasn't been tampered with.",
+        "nonce": "Short for 'number used once'. In Proof-of-Work mining, it's a random number that miners keep changing and adding to the block data until they find a hash that meets the network's difficulty target. Finding the right nonce is the 'work' in Proof-of-Work.",
+        "merkle tree": "A way to efficiently organize and verify the transactions within a block. It involves repeatedly hashing pairs of transaction hashes together until you get a single final hash, called the 'Merkle Root'. This root represents all transactions in the block. It allows someone to quickly check if a specific transaction is included in the block without needing to check every single one.",
+        "public key": "Your public key is like your bank account number on the blockchain. You can share it freely with others so they can send you cryptocurrency or interact with your address. It's mathematically derived from your private key.",
+        "private key": "Your private key is like the secret password or PIN for your blockchain account. It proves you own your assets and is used to create digital signatures to authorize transactions. **Never share your private key with anyone!** If someone gets it, they can control your funds.",
+        "digital signature": "A digital signature is created using your private key and the transaction data. It mathematically proves that you authorized the transaction and that the transaction details haven't been changed since you signed it. Others can verify the signature using your public key without needing to know your private key.",
+        // ... (Keep the rest of your extensive blockchainData object here) ...
+         "zkp": "ZKPs (Zero-Knowledge Proofs) let you prove something is true (e.g., you have enough funds) without revealing the underlying data.\n<br>**How it works:** Through advanced cryptography, a 'proof' is generated that confirms a statement's validity based on hidden data, without exposing the data itself.",
+         "multisig": "Multisig (multi-signature) requires signatures from multiple private keys (e.g., 2 out of 3) to authorize a transaction, increasing security for shared wallets or funds.",
+         "coin": "A coin (or cryptocurrency) is the native digital currency of a specific blockchain (e.g., BTC on Bitcoin, ETH on Ethereum).",
+         "token": "A token is a digital asset built on top of an existing blockchain's platform using smart contracts (e.g., ERC-20 tokens on Ethereum).",
+         "stablecoin": "A stablecoin is a type of cryptocurrency designed to maintain a stable value, usually pegged to a fiat currency (like USDT/USDC) or other assets.",
+         "altcoin": "Altcoin is short for 'alternative coin' - generally refers to any cryptocurrency other than Bitcoin.",
+         "wrapped token": "A wrapped token is a token that represents a cryptocurrency from another blockchain (e.g., WBTC on Ethereum represents BTC).",
+         "wbtc": "WBTC (Wrapped Bitcoin) is an ERC-20 token on Ethereum pegged 1:1 to Bitcoin.",
+         "proof of work": "Proof of Work (PoW) is a consensus mechanism where miners compete to solve complex computational puzzles to validate transactions and create new blocks. Used by Bitcoin.\n<br>**How it works:** Miners repeatedly hash block data with a changing nonce until they find a hash below a target difficulty. The first to find it broadcasts the block. Requires significant energy.",
+         "pow": "PoW (Proof of Work) is Bitcoin's consensus mechanism.\n<br>**How it works:** Requires miners to perform intensive computations (work) to find a valid block hash, securing the network through energy expenditure.",
+         "proof of stake": "Proof of Stake (PoS) is a consensus mechanism where validators lock up (stake) their own cryptocurrency as collateral to get chosen to validate transactions and create blocks. More energy-efficient than PoW.\n\n**How it works:** Validators are typically chosen pseudo-randomly, often weighted by the amount they've staked. They propose and attest to new blocks. Dishonest behavior can result in their stake being 'slashed' (partially or fully confiscated).",
+         "pos": "PoS (Proof of Stake) selects validators based on the amount of crypto they 'stake'.\n<br>**How it works:** Validators lock up funds as collateral. The protocol selects validators to propose/attest blocks. Malicious validators risk losing their stake (slashing).",
+         "gochain": "GoChain is an Ethereum-compatible blockchain focused on speed, scalability, and lower energy consumption.\n\n**How it works:** Uses a Proof of Reputation (PoR) consensus mechanism where known, reputable entities (companies, universities) are authorized to validate transactions and create blocks, providing efficiency and accountability.",
+         "verifiable credentials": "Verifiable Credentials (VCs) are digital, tamper-proof credentials (like diplomas, IDs) signed by an issuer and controlled by the holder.\n\n**How it works:** An issuer creates a credential with claims about a subject (holder), signs it cryptographically, and gives it to the holder. The holder stores it in a digital wallet and can present it to a verifier. The verifier checks the issuer's signature and potentially the credential's status (e.g., revocation) via a registry (which might be on a blockchain).",
+         "did": "DID (Decentralized Identifier) is a unique, user-controlled identifier (like `did:example:123`) linked to cryptographic keys, allowing individuals to manage their own digital identity.\n\n**How it works:** A DID Method specifies how DIDs are created, resolved (looking up associated public keys), updated, and deactivated, often using a blockchain or other distributed ledger.",
+         "hello": "Hi there! Ask me anything about blockchain or our services.",
+         "hi": "Hello! How can I help you today?",
+         "thanks": "You're welcome!",
+         "thank you": "You're welcome! Glad I could assist."
+    };
+
+    // --- DOM Element References ---
+    const chatOutput = document.getElementById('chat-output');
+    const userInput = document.getElementById('user-input');
+    const sendButton = document.getElementById('send-button');
+    const openChatbotBtn = document.getElementById('openChatbotBtn');
+    const closeChatbotBtn = document.getElementById('closeChatbotBtn');
+    const chatbotPopup = document.getElementById('chatbotPopup');
+    const backToTopBtn = document.getElementById('backToTop');
+    const darkModeToggleBtn = document.getElementById('darkModeToggle');
+    const header = document.querySelector('header');
+
+    // --- Chatbot Functions ---
+    function sendMessage() {
+        if (!userInput || !chatOutput) return;
+        const text = userInput.value.trim();
+        if (text === '') return;
+
+        displayMessage(text, 'user');
+        const botResponse = getBotResponse(text);
+
+        // Simulate bot thinking time
+        chatOutput.classList.add('thinking'); // Optional: Add a class for visual feedback
+        setTimeout(() => {
+            chatOutput.classList.remove('thinking');
+            displayMessage(botResponse, 'bot');
+            scrollToBottom();
+        }, 500); // Adjust delay as needed
+
+        userInput.value = '';
+        userInput.focus();
+    }
+
+    function displayMessage(text, sender) {
+        if (!chatOutput) return;
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message');
+        messageDiv.classList.add(sender === 'user' ? 'user-message' : 'bot-message');
+
+        // Basic sanitation and formatting
+        text = text.replace(/</g, "&lt;").replace(/>/g, "&gt;"); // Basic XSS prevention
+        text = text.replace(/\\n/g, '<br>'); // Handle explicit newlines
+        text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); // Bold formatting
+        text = text.replace(/`([^`]+)`/g, '<code>$1</code>'); // Code formatting
+
+        messageDiv.innerHTML = text; // Use innerHTML for formatting tags
+        chatOutput.appendChild(messageDiv);
+        if (sender === 'user') { // Scroll immediately for user messages
+             scrollToBottom();
+        }
+    }
+
+    function getBotResponse(userText) {
+         const lowerUserText = userText.toLowerCase().trim();
+         let bestMatch = null;
+         let highestScore = 0;
+
+         // Simple keyword matching with basic scoring (longer match = better)
+         for (const keyword in blockchainData) {
+             const lowerKeyword = keyword.toLowerCase();
+             if (lowerUserText.includes(lowerKeyword)) {
+                 // Simple score based on keyword length - prioritize longer, more specific keywords
+                 const score = lowerKeyword.length;
+                 if (score > highestScore) {
+                     highestScore = score;
+                     bestMatch = { keyword: keyword, response: blockchainData[keyword] };
+                 }
+                 // If it's an exact match, boost score significantly
+                 if (lowerUserText === lowerKeyword) {
+                      highestScore = score * 10; // Prioritize exact match
+                      bestMatch = { keyword: keyword, response: blockchainData[keyword] };
+                      break; // Found exact match, stop searching
+                 }
+             }
+         }
+
+         if (bestMatch) {
+             return bestMatch.response;
+         }
+
+         // Fallback responses
+         if (lowerUserText.includes("your name") || lowerUserText.includes("who are you")) {
+            return "I'm Trustchain's helpful assistant, here to answer your blockchain questions!";
+         }
+         if (lowerUserText.includes("service") || lowerUserText.includes("what do you do")) {
+             return "We offer blockchain-based credential verification, document timestamping, smart contract integration, and consulting. Check out our <a href='#services' onclick='closeChatbot()'>Services</a> section for more details!";
+         }
+          if (lowerUserText.includes("contact") || lowerUserText.includes("support")) {
+             return "You can reach us via the <a href='#contact' onclick='closeChatbot()'>Contact Us</a> form or email us at info@trustchain.io or support@trustchain.io.";
+         }
+
+
+         return "Sorry, I don't have specific information about that right now. Could you please try rephrasing your question?";
+    }
+
+    function scrollToBottom() {
+        if (!chatOutput) return;
+        // Slight delay to allow DOM update before scrolling
+        setTimeout(() => { chatOutput.scrollTop = chatOutput.scrollHeight; }, 50);
+    }
+
+    function closeChatbot() {
+        if (chatbotPopup) {
+            chatbotPopup.classList.remove('active');
+        }
+    }
+
+    // --- Event Listeners ---
+
+    // Send message events
+    if (sendButton) sendButton.addEventListener('click', sendMessage);
+    if (userInput) {
+        userInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault(); // Prevent form submission/newline
+                sendMessage();
+            }
+        });
+    }
+
+    // Chatbot popup toggle
+    if (openChatbotBtn && chatbotPopup) {
+        openChatbotBtn.addEventListener('click', () => {
+            const isActive = chatbotPopup.classList.contains('active');
+            chatbotPopup.classList.toggle('active');
+             if (!isActive && userInput) { // Focus input only when opening
+                setTimeout(() => userInput.focus(), 300); // Delay focus until transition ends
+            }
+        });
+    }
+    if (closeChatbotBtn && chatbotPopup) {
+        closeChatbotBtn.addEventListener('click', closeChatbot);
+    }
+
+     // Optional: Close popup if clicking outside
+     document.addEventListener('click', function(event) {
+         if (chatbotPopup && openChatbotBtn && chatbotPopup.classList.contains('active')) {
+             if (!chatbotPopup.contains(event.target) && !openChatbotBtn.contains(event.target)) {
+                 closeChatbot();
+             }
+         }
+     }, true); // Use capture phase
+
+    // Scroll-based events (Header & BackToTop)
+    window.addEventListener('scroll', () => {
+        if (header) header.classList.toggle('scrolled', window.scrollY > 50);
+        if (backToTopBtn) backToTopBtn.style.display = window.scrollY > 300 ? 'flex' : 'none'; // Use flex for icon centering
+
+         // Section fade-in effect (Optional)
+         /*
+         document.querySelectorAll('section').forEach(section => {
+             const rect = section.getBoundingClientRect();
+             if (rect.top <= window.innerHeight - 100 && rect.bottom >= 100) { // Check if section is somewhat in view
+                  section.style.opacity = '1';
+                  section.style.transform = 'translateY(0)';
+             } else {
+                   // Optional: Reset if scrolled out of view
+                   // section.style.opacity = '0';
+                   // section.style.transform = 'translateY(20px)';
+             }
+         });
+         */
+    });
+
+    // Initial setup on page load
+    window.addEventListener('load', () => {
+        // Dark Mode Toggle Logic
+        if (darkModeToggleBtn) {
+            // Check localStorage or prefers-color-scheme for initial state
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const currentMode = localStorage.getItem('theme');
+
+            if (currentMode === 'dark' || (!currentMode && prefersDark)) {
+                document.body.classList.add('dark'); // Apply dark class if needed
+                darkModeToggleBtn.innerHTML = '☀️'; // Sun icon
+            } else {
+                darkModeToggleBtn.innerHTML = '🌙'; // Moon icon
+            }
+
+            darkModeToggleBtn.onclick = function() {
+                document.body.classList.toggle('dark');
+                let theme = 'light';
+                if (document.body.classList.contains('dark')) {
+                    theme = 'dark';
+                    this.innerHTML = '☀️';
+                } else {
+                    this.innerHTML = '🌙';
+                }
+                localStorage.setItem('theme', theme); // Save preference
+            };
+        }
+
+        // Google Sign-In Initialization (Check if element exists)
+        const signInButtonContainer = document.querySelector(".g_id_signin");
+        if (typeof google !== 'undefined' && google.accounts && google.accounts.id && signInButtonContainer) {
+             google.accounts.id.initialize({
+                 client_id: "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com", // ** REPLACE WITH YOUR ACTUAL CLIENT ID **
+                 callback: handleCredentialResponse
+             });
+             google.accounts.id.renderButton(
+                 signInButtonContainer,
+                 { theme: "outline", size: "large" }
+             );
+             // google.accounts.id.prompt(); // Optional: show one-tap prompt
+         } else if (signInButtonContainer) {
+             console.warn("Google Sign-In button container found, but GSI client script may not be loaded or initialized.");
+         }
+
+         // Initialize section visibility for animations (if using fade-in)
+         /*
+         document.querySelectorAll('section').forEach(section => {
+             section.style.opacity = '0';
+             section.style.transform = 'translateY(20px)';
+             section.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+         });
+         // Trigger scroll event once to show initially visible sections
+         window.dispatchEvent(new Event('scroll'));
+         */
+
+    }); // End window.onload
+
+    // --- Google Sign-In Handling ---
+    function handleCredentialResponse(response) {
+        console.log("Encoded JWT ID token: " + response.credential);
+        const userData = parseJwt(response.credential);
+        console.log("User Data:", userData);
+        alert(`Login successful! Welcome, ${userData.name || 'User'}!`);
+
+        // Optional: Update UI after login
+        const signInButtonContainer = document.querySelector(".g_id_signin");
+        if (signInButtonContainer) {
+             signInButtonContainer.innerHTML = `
+                 <div style="display: flex; align-items: center; gap: 10px; color: #f1c40f;">
+                     <img src="${userData.picture || 'default-avatar.png'}" alt="Profile" style="width:30px;height:30px;border-radius:50%;">
+                     <span>Logged in as ${userData.given_name || userData.name || 'User'}</span>
+                 </div>
+             `;
+        }
+    }
+
+    // Decode JWT token
+    function parseJwt (token) {
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        } catch (e) {
+            console.error("Error decoding JWT:", e);
+            return null; // Return null or an empty object on error
+        }
+    }
+
+    // Placeholder for AI Fetch (If you implement server-side AI)
+    /*
+    async function fetchAIResponse(userInput) {
+        // Replace with your actual API endpoint and logic
+        console.warn("fetchAIResponse function needs implementation.");
+        return "This is a placeholder AI response.";
+    }
+    */
+
+    // Add a dark mode CSS definition if you haven't already
+    const styleSheet = document.createElement("style");
+    styleSheet.innerText = `
+        body.dark {
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+        }
+        body.dark section {
+            /* background-color: #2a2a2a; */ /* Optional: Darker section background */
+        }
+        body.dark .team-member, body.dark .service-box, body.dark #contact form {
+            background-color: #2c2c2c;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+        }
+         body.dark .team-member h3, body.dark .additional-info p.full-name, body.dark #contact form label {
+             color: #f0f0f0;
+         }
+         body.dark .team-member p.role, body.dark .additional-info p, body.dark .additional-info a, body.dark section p {
+             color: #bbb;
+         }
+          body.dark .social-links a { color: #aaa; }
+          body.dark .additional-info i, body.dark .team-member p.role i, body.dark header .logo i, body.dark #contact form h2 i, body.dark section h2 i { color: #f1c40f; } /* Keep accent */
+          body.dark .additional-info a:hover, body.dark .social-links a:hover { color: #f1c40f; }
+
+          body.dark header { background: rgba(20,20,20,0.8); }
+          body.dark header.scrolled { background: rgba(10,10,10,0.95); box-shadow: 0 2px 10px rgba(0,0,0,0.7); }
+          body.dark header nav a { color: #e0e0e0; }
+          body.dark header nav a:hover { color: #f1c40f; }
+
+          body.dark #backToTop { background: #333; color: #f1c40f; }
+          body.dark #backToTop:hover { background: #555; }
+
+          body.dark footer { background: #111; color: #888; }
+
+          body.dark #contact form input, body.dark #contact form textarea {
+              background-color: #3a3a3a;
+              border-color: #555;
+              color: #e0e0e0;
+          }
+           body.dark #contact form input::placeholder, body.dark #contact form textarea::placeholder {
+               color: #888;
+           }
+
+           body.dark .chatbox-window { background: #2c2c2c; color: #e0e0e0;}
+           body.dark .chatbox-window h3 { background-color: #f1c40f; color: #1a1a1a; }
+            body.dark .chatbox-window .close-btn { color: #1a1a1a; }
+           body.dark #chat-output { background-color: #1f1f1f;}
+           body.dark .user-message { background-color: #4a4a4a; }
+           body.dark .bot-message { background-color: #3a3a3a; }
+           body.dark #user-input { background-color: #3a3a3a; border-color: #555; color: #e0e0e0; }
+           body.dark #user-input::placeholder { color: #888; }
+    `;
+    document.head.appendChild(styleSheet);
+
+</script>
+
+</body>
+</html>
