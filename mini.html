@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Google Drive Picker Upload Demo</title>
+  <script src="[https://apis.google.com/js/api.js"></script>](https://apis.google.com/js/api.js"></script>)
+</head>
+<body>
+  <h2>Google Drive Picker Upload Demo</h2>
+  <button id="pickerBtn">Upload to Google Drive</button>
+  <div id="pickerStatus"></div>
+  <script>
+    // Your Google API credentials
+    const CLIENT_ID = "798236020770-92k9r7j0re9bcgrjoij85frc3gu88nno.apps.googleusercontent.com";
+    const API_KEY = "AIzaSyAu0yZVNl9GzKKkyhHhJxpmJb-bKSdKob0";
+    const SCOPE = "[https://www.googleapis.com/auth/drive.file";](https://www.googleapis.com/auth/drive.file";)
+    let pickerApiLoaded = false;
+    let oauthToken;
+
+    document.getElementById('pickerBtn').onclick = function() {
+      if (!pickerApiLoaded) {
+        document.getElementById('pickerStatus').textContent = "Picker API is not loaded yet.";
+        return;
+      }
+      if (!oauthToken) {
+        // Start OAuth 2.0 flow
+        gapi.auth.authorize(
+          {
+            'client_id': CLIENT_ID,
+            'scope': SCOPE,
+            'immediate': false
+          },
+          handleAuthResult
+        );
+      } else {
+        createPicker();
+      }
+    };
+
+    function onApiLoad() {
+      gapi.load('auth', {'callback': onAuthApiLoad});
+      gapi.load('picker', {'callback': onPickerApiLoad});
+    }
+    function onAuthApiLoad() {
+      // Auth API loaded
+    }
+    function onPickerApiLoad() {
+      pickerApiLoaded = true;
+      document.getElementById('pickerStatus').textContent = "Ready to upload.";
+    }
+    function handleAuthResult(authResult) {
+      if (authResult && !authResult.error) {
+        oauthToken = authResult.access_token;
+        createPicker();
+      }
+    }
+    function createPicker() {
+      if (pickerApiLoaded && oauthToken) {
+        const picker = new google.picker.PickerBuilder()
+          .addView(google.picker.ViewId.DOCS)
+          .addView(google.picker.ViewId.DOCS_UPLOAD)
+          .setOAuthToken(oauthToken)
+          .setDeveloperKey(API_KEY)
+          .setCallback(pickerCallback)
+          .build();
+        picker.setVisible(true);
+      }
+    }
+    function pickerCallback(data) {
+      if (data.action === google.picker.Action.PICKED) {
+        const file = data.docs[0];
+        document.getElementById('pickerStatus').textContent =
+          "File uploaded! Name: " + file.name + ", ID: " + file.id;
+      } else if (data.action === google.picker.Action.CANCEL) {
+        document.getElementById('pickerStatus').textContent = "Picker closed.";
+      }
+    }
+    // Load the APIs
+    window.onload = function() {
+      gapi.load('client:picker', onApiLoad);
+    };
+  </script>
+  <script type="text/javascript" src="[https://apis.google.com/js/api.js"></script>](https://apis.google.com/js/api.js"></script>)
+  <script type="text/javascript" src="[https://apis.google.com/js/api_pickers.js"></script>](https://apis.google.com/js/api_pickers.js"></script>)
+</body>
+</html>

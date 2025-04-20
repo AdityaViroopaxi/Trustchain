@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate Blockchain Verification</title>
+    <!-- Firebase App (the core Firebase SDK) -->
+    <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-app-compat.js"></script>
+    <!-- Firebase Auth -->
+    <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-auth-compat.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f7fa;
+        }
+        .header {
+            text-align: center;
+            padding: 20px;
+            background-color: #1a73e8;
+            color: white;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .upload-area {
+            border: 2px dashed #1a73e8;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .upload-area:hover {
+            background-color: #e8f0fe;
+        }
+        .upload-area.dragging {
+            background-color: #e8f0fe;
+            border-color: #1a73e8;
+        }
+        .btn {
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #0d62d9;
+        }
+        .btn:disabled {
+            background-color: #a7c0e3;
+            cursor: not-allowed;
+        }
+        .status-container {
+            margin-top: 20px;
+        }
+        .status-step {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .status-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+        }
+        .status-pending {
+            background-color: #9aa0a6;
+        }
+        .status-progress {
+            background-color: #fbbc04;
+        }
+        .status-complete {
+            background-color: #34a853;
+        }
+        .status-error {
+            background-color: #ea4335;
+        }
+        .status-text {
+            flex-grow: 1;
+        }
+        .progress-bar-container {
+            height: 6px;
+            background-color: #e1e3e6;
+            border-radius: 3px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: #1a73e8;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        #certificatePreview {
+            max-width: 100%;
+            max-height: 400px;
+            margin-top: 20px;
+        }
+        .hidden {
+            display: none;
+        }
+        .verification-details {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .verification-details pre {
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        #transactionHash {
+            font-family: monospace;
+            word-break: break-all;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 15px;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        .tab.active {
+            border-bottom: 2px solid #1a73e8;
+            color: #1a73e8;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .history-item {
+            padding: 15px;
+            border-bottom: 1px solid #e1e3e6;
+        }
+        .history-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Certificate Blockchain Verification</h1>
+        <p>Secure your certificates on blockchain using AccelChain technology</p>
+        <button id="google_signin" class="btn" style="margin-bottom:10px;">Sign in with Google</button>
+        <button id="signOutBtn" style="display:none;margin-top:10px;">Sign Out</button>
+        <div id="googleStatus" style="margin-top:10px;color:#1a73e8;"></div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>Upload Certificate</h2>
+            <p>Upload your certificate to verify and store on the blockchain</p>
+            
+            <div class="tabs">
+                <div class="tab active" data-tab="upload">Upload</div>
+                <div class="tab" data-tab="history">History</div>
+            </div>
+            
+            <div class="tab-content active" id="upload-tab">
+                <input type="file" id="certificateInput" accept=".pdf,.jpg,.jpeg,.png" style="display: none;">
+                <div class="upload-area" id="uploadArea">
+                    <img src="/api/placeholder/80/80" alt="Upload icon">
+                    <h3>Drag & Drop Certificate Here</h3>
+                    <p>or</p>
+                    <button class="btn" id="browseButton">Browse Files</button>
+                    <p>Supported formats: PDF, JPG, PNG</p>
+                </div>
+                
+                <div id="certificateDetails" class="hidden">
+                    <h3>Certificate Details</h3>
+                    <p>Filename: <span id="fileName"></span></p>
+                    <p>File size: <span id="fileSize"></span></p>
+                    <img id="certificatePreview" class="hidden" alt="Certificate preview">
+                    <button class="btn" id="uploadButton">Upload to Blockchain</button>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="history-tab">
+                <div class="history-list" id="historyList">
+                    <p>No verification history available</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Verification Status</h2>
+            <div id="statusContainer" class="status-container">
+                <div class="status-step">
+                    <div class="status-icon status-pending">1</div>
+                    <div class="status-text">Upload Certificate</div>
+                </div>
+                <div class="status-step">
+                    <div class="status-icon status-pending">2</div>
+                    <div class="status-text">Submit to AccelChain</div>
+                </div>
+                <div class="status-step">
+                    <div class="status-icon status-pending">3</div>
+                    <div class="status-text">Blockchain Verification</div>
+                </div>
+                <div class="status-step">
+                    <div class="status-icon status-pending">4</div>
+                    <div class="status-text">Store on Google Drive</div>
+                </div>
+            </div>
+            
+            <div id="verificationProgress" class="hidden">
+                <h3>Verification Progress</h3>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <p id="progressText">0%</p>
+            </div>
+            
+            <div id="verificationDetails" class="verification-details hidden">
+                <h3>Blockchain Transaction Details</h3>
+                <p><strong>Status:</strong> <span id="txStatus">Pending</span></p>
+                <p><strong>Transaction Hash:</strong> <span id="transactionHash">-</span></p>
+                <p><strong>Timestamp:</strong> <span id="timestamp">-</span></p>
+                <p><strong>Google Drive Link:</strong> <a id="driveLink" href="#" target="_blank">Not available yet</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const uploadArea = document.getElementById('uploadArea');
+            const certificateInput = document.getElementById('certificateInput');
+            const browseButton = document.getElementById('browseButton');
+            const certificateDetails = document.getElementById('certificateDetails');
+            const fileName = document.getElementById('fileName');
+            const fileSize = document.getElementById('fileSize');
+            const certificatePreview = document.getElementById('certificatePreview');
+            const uploadButton = document.getElementById('uploadButton');
+            const verificationProgress = document.getElementById('verificationProgress');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            const verificationDetails = document.getElementById('verificationDetails');
+            const txStatus = document.getElementById('txStatus');
+            const transactionHash = document.getElementById('transactionHash');
+            const timestamp = document.getElementById('timestamp');
+            const driveLink = document.getElementById('driveLink');
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            const historyList = document.getElementById('historyList');
+            
+            let selectedFile = null;
+            let verificationHistory = [];
+            
+            // Tab functionality
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(tc => tc.classList.remove('active'));
+                    
+                    tab.classList.add('active');
+                    document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
+                    
+                    if (tab.dataset.tab === 'history') {
+                        loadVerificationHistory();
+                    }
+                });
+            });
+            
+            // File drag and drop handling
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, () => {
+                    uploadArea.classList.add('dragging');
+                }, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, () => {
+                    uploadArea.classList.remove('dragging');
+                }, false);
+            });
+            
+            uploadArea.addEventListener('drop', handleDrop, false);
+            
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                
+                if (files.length > 0) {
+                    handleFiles(files[0]);
+                }
+            }
+            
+            // File input handling
+            browseButton.addEventListener('click', () => {
+                certificateInput.click();
+            });
+            
+            certificateInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleFiles(e.target.files[0]);
+                }
+            });
+            
+            function handleFiles(file) {
+                selectedFile = file;
+                fileName.textContent = file.name;
+                fileSize.textContent = formatFileSize(file.size);
+                
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        certificatePreview.src = e.target.result;
+                        certificatePreview.classList.remove('hidden');
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    certificatePreview.classList.add('hidden');
+                }
+                
+                certificateDetails.classList.remove('hidden');
+                updateStatusStep(0, 'complete');
+            }
+            
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+            
+            // Upload and verification process
+            uploadButton.addEventListener('click', startVerificationProcess);
+            
+            function startVerificationProcess() {
+                if (!selectedFile) {
+                    alert('Please select a certificate file first.');
+                    return;
+                }
+                
+                // Disable upload button
+                uploadButton.disabled = true;
+                uploadButton.textContent = 'Processing...';
+                
+                // Show progress
+                verificationProgress.classList.remove('hidden');
+                
+                // Simulate the verification process
+                simulateVerification();
+            }
+            
+            function simulateVerification() {
+                let progress = 0;
+                const totalSteps = 4;
+                let currentStep = 1;
+                
+                updateStatusStep(0, 'complete'); // Upload step already complete
+                
+                const interval = setInterval(() => {
+                    progress += 5;
+                    updateProgress(progress);
+                    
+                    // Simulate step completion
+                    if (progress === 25) {
+                        // Step 2: Submit to AccelChain
+                        updateStatusStep(1, 'complete');
+                        simulateApiCall('submitToAccelChain');
+                    } else if (progress === 60) {
+                        // Step 3: Blockchain Verification
+                        updateStatusStep(2, 'complete');
+                        simulateApiCall('verifyOnBlockchain');
+                    } else if (progress === 90) {
+                        // Step 4: Store on Google Drive
+                        updateStatusStep(3, 'complete');
+                        simulateApiCall('storeOnGoogleDrive');
+                    } else if (progress >= 100) {
+                        clearInterval(interval);
+                        progress = 100;
+                        updateProgress(progress);
+                        
+                        // Complete the process
+                        completeVerification();
+                    }
+                }, 300);
+            }
+            
+            function updateProgress(value) {
+                progressBar.style.width = `${value}%`;
+                progressText.textContent = `${value}%`;
+            }
+            
+            function updateStatusStep(stepIndex, status) {
+                const statusSteps = document.querySelectorAll('.status-step .status-icon');
+                statusSteps[stepIndex].className = `status-icon status-${status}`;
+                
+                if (status === 'complete') {
+                    statusSteps[stepIndex].innerHTML = '✓';
+                } else if (status === 'progress') {
+                    statusSteps[stepIndex].innerHTML = '⋯';
+                } else if (status === 'error') {
+                    statusSteps[stepIndex].innerHTML = '!';
+                } else {
+                    statusSteps[stepIndex].innerHTML = (stepIndex + 1).toString();
+                }
+            }
+            
+            function simulateApiCall(action) {
+                console.log(`Simulating API call: ${action}`);
+                // In a real implementation, this would make an actual API call to AccelChain or Google Drive
+            }
+            
+            function completeVerification() {
+                // Generate a random transaction hash for demo
+                const txHash = '0x' + Array.from({length: 64}, () => Math.floor(Math.random() * 16).toString(16)).join('');
+                
+                // Update verification details
+                txStatus.textContent = 'Confirmed';
+                transactionHash.textContent = txHash;
+                timestamp.textContent = new Date().toLocaleString();
+                driveLink.href = '#';
+                driveLink.textContent = 'https://drive.google.com/file/d/' + generateRandomId();
+                
+                // Show verification details
+                verificationDetails.classList.remove('hidden');
+                
+                // Enable upload button again
+                uploadButton.disabled = false;
+                uploadButton.textContent = 'Upload to Blockchain';
+                
+                // Save to history
+                saveToHistory({
+                    fileName: selectedFile.name,
+                    fileSize: formatFileSize(selectedFile.size),
+                    timestamp: new Date().toISOString(),
+                    txHash: txHash,
+                    driveLink: driveLink.textContent
+                });
+                
+                // Alert user
+                setTimeout(() => {
+                    alert('Certificate verification completed successfully!');
+                }, 500);
+            }
+            
+            function generateRandomId() {
+                return Array.from({length: 28}, () => Math.floor(Math.random() * 36).toString(36)).join('');
+            }
+            
+            // History management
+            function saveToHistory(item) {
+                // Get existing history from localStorage or initialize empty array
+                const existingHistory = localStorage.getItem('verificationHistory');
+                verificationHistory = existingHistory ? JSON.parse(existingHistory) : [];
+                
+                // Add new item to history
+                verificationHistory.unshift(item);
+                
+                // Keep only the last 10 items
+                if (verificationHistory.length > 10) {
+                    verificationHistory = verificationHistory.slice(0, 10);
+                }
+                
+                // Save back to localStorage
+                localStorage.setItem('verificationHistory', JSON.stringify(verificationHistory));
+            }
+            
+            function loadVerificationHistory() {
+                // Get history from localStorage
+                const existingHistory = localStorage.getItem('verificationHistory');
+                verificationHistory = existingHistory ? JSON.parse(existingHistory) : [];
+                
+                // Update UI
+                if (verificationHistory.length === 0) {
+                    historyList.innerHTML = '<p>No verification history available</p>';
+                } else {
+                    historyList.innerHTML = '';
+                    verificationHistory.forEach(item => {
+                        const historyItem = document.createElement('div');
+                        historyItem.className = 'history-item';
+                        
+                        const formattedDate = new Date(item.timestamp).toLocaleString();
+                        
+                        historyItem.innerHTML = `
+                            <h4>${item.fileName}</h4>
+                            <p>Size: ${item.fileSize}</p>
+                            <p>Verified: ${formattedDate}</p>
+                            <p>TX: ${item.txHash.substring(0, 10)}...${item.txHash.substring(item.txHash.length - 10)}</p>
+                            <p><a href="${item.driveLink}" target="_blank">View on Google Drive</a></p>
+                        `;
+                        
+                        historyList.appendChild(historyItem);
+                    });
+                }
+            }
+        });
+    </script>
+<script>
+// Your Firebase configuration (from firebase.js)
+const firebaseConfig = {
+  apiKey: "AIzaSyDJoF7UXC0ZjP1Y1ov9K2oilM90p7ZSCqg",
+  authDomain: "blockverify-293d9.firebaseapp.com",
+  projectId: "blockverify-293d9",
+  storageBucket: "blockverify-293d9.firebasestorage.app",
+  messagingSenderId: "98128405652",
+  appId: "1:98128405652:web:0ce761c557acc608394081"
+};
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const provider = new firebase.auth.GoogleAuthProvider();
+provider.addScope('https://www.googleapis.com/auth/drive.file');
+
+let accessToken = null;
+
+const googleLogin = document.getElementById("google_signin");
+const googleSignOut = document.getElementById("signOutBtn");
+const googleStatus = document.getElementById("googleStatus");
+
+function updateAuthUI(user) {
+  if (user) {
+    googleStatus.textContent = `Signed in as ${user.displayName}`;
+    googleLogin.style.display = "none";
+    googleSignOut.style.display = "";
+  } else {
+    googleStatus.textContent = "Not signed in.";
+    googleLogin.style.display = "";
+    googleSignOut.style.display = "none";
+    accessToken = null;
+  }
+}
+
+// Listen for auth state changes
+auth.onAuthStateChanged(function(user) {
+  updateAuthUI(user);
+});
+
+if (googleLogin) {
+  googleLogin.onclick = function() {
+    auth.signInWithPopup(provider)
+      .then((result) => {
+        accessToken = result.credential.accessToken;
+        updateAuthUI(result.user);
+      })
+      .catch((error) => {
+        googleStatus.textContent = `Sign-in failed: ${error.message}`;
+      });
+  };
+}
+if (googleSignOut) {
+  googleSignOut.onclick = function() {
+    auth.signOut().then(() => {
+      updateAuthUI(null);
+    });
+  };
+}
+// To use accessToken for Google Drive API, just use the variable 'accessToken' after sign-in.
+</script>
+</body>
+</html>

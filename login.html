@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Animated WebPage with Google Sign-In</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&display=swap" rel="stylesheet" />
+  <script type="module" src="https://unpkg.com/@splinetool/viewer@1.9.82/build/spline-viewer.js"></script>
+  <script src="firebase.js" defer type="module"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    .google-signin-btn {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 35px;
+      border-radius: 18px;
+      border: none;
+      background: transparent;
+      color: white;
+      cursor: pointer;
+      font-family: "Black Ops One", system-ui;
+      font-size: 1rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .google-signin-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+    }
+    .google-signin-btn svg {
+      width: 26px;
+      height: 26px;
+    }
+    .user-box {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      font-size: 1rem;
+      color: white;
+      backdrop-filter: blur(4px);
+      padding: 10px 20px;
+      border-radius: 18px;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.5s ease, transform 0.3s ease;
+    }
+    .user-box.show {
+      display: flex;
+      opacity: 1;
+    }
+    .user-box img {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      transition: transform 0.3s ease;
+    }
+    .user-box:hover img {
+      transform: rotate(10deg) scale(1.1);
+    }
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      padding: 15px 25px;
+      background: rgba(0,0,0,0.8);
+      color: white;
+      border-radius: 8px;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      z-index: 9999;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .btn1 {
+      color: white;
+      padding: 10px 40px;
+      border-radius: 18px;
+      border: none;
+      background: linear-gradient(45deg, #000dff, #ff00e6, #ff7700);
+      transition: 0.4s;
+    }
+    .btn1:hover {
+      transform: scale(1.2);
+    }
+    /* Blockchain Loader Styles */
+    .blockchain-loader {
+      position: fixed;
+      inset: 0;
+      background: black;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 999999;
+      transition: opacity 1s ease, transform 2s ease;
+    }
+    .cube-container {
+      display: grid;
+      grid-template-columns: repeat(2, 40px);
+      gap: 20px;
+      transform: rotate(45deg);
+    }
+    .cube {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(45deg, #000dff, #ff00e6, #ff7700);
+      animation: rotateCube 1.5s infinite ease-in-out;
+      border-radius: 8px;
+      box-shadow: 0 0 20px rgba(0, 221, 255, 0.7);
+    }
+    .cube:nth-child(2) { animation-delay: 0.2s; }
+    .cube:nth-child(3) { animation-delay: 0.4s; }
+    .cube:nth-child(4) { animation-delay: 0.6s; }
+
+    @keyframes rotateCube {
+      0% { transform: rotateY(0) rotateX(0) scale(1); }
+      50% { transform: rotateY(180deg) rotateX(180deg) scale(1.2); }
+      100% { transform: rotateY(360deg) rotateX(360deg) scale(1); }
+    }
+
+    .loader-blast {
+      opacity: 0;
+      transform: scale(3) rotate(720deg);
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="loader" class="blockchain-loader">
+    <div class="cube-container">
+      <div class="cube"></div>
+      <div class="cube"></div>
+      <div class="cube"></div>
+      <div class="cube"></div>
+    </div>
+  </div>
+
+  <spline-viewer class="background" url="https://prod.spline.design/csXdWM-iVN1op9aF/scene.splinecode"></spline-viewer>
+  <nav class="navbar">
+    <h1 class="logo"><i class="fas fa-cubes"></i>TRUSTCHAIN</h1>
+    <h1><b>Welcome to TRUSTCHAIN</b></h1>
+    <button id="google_signin" class="btn1">Connect</button>
+    <div class="user-box" id="userBox" title="Click to log out">
+      <img src="" alt="User Image" id="userImage">
+      <span id="userName">Welcome!</span>
+    </div>
+  </nav>
+  <main class="mainarea"></main>
+  <div id="toast" class="toast"></div>
+
+  <script>
+    window.onload = function() {
+      setTimeout(() => {
+        document.getElementById("loader").classList.add("loader-blast");
+      }, 5000);
+
+      google.accounts.id.initialize({
+        client_id: "337424010179-hmshe5e08o4m61bmaabdvah9ba5ab6ju.apps.googleusercontent.com",
+        callback: handleCredentialResponse
+      });
+      google.accounts.id.renderButton(
+        document.getElementById("googleSignInCustom"),
+        { theme: "outline", size: "large" }
+      );
+      document.getElementById('userBox').addEventListener('click', logoutUser);
+      const savedUser = JSON.parse(localStorage.getItem('googleUser'));
+      if (savedUser) showUser(savedUser);
+    };
+
+    function handleCredentialResponse(response) {
+      const data = parseJwt(response.credential);
+      localStorage.setItem('googleUser', JSON.stringify(data));
+      showUser(data);
+      showToast(`Welcome, ${data.name}!`);
+    }
+
+    function showUser(user) {
+      document.getElementById("userName").textContent = `👋 Hi, ${user.name}`;
+      document.getElementById("userImage").src = user.picture;
+      const box = document.getElementById("userBox");
+      box.classList.add("show");
+      document.getElementById("googleSignInCustom").style.display = "none";
+    }
+
+    function logoutUser() {
+      localStorage.removeItem('googleUser');
+      const box = document.getElementById("userBox");
+      box.classList.remove("show");
+      document.getElementById("googleSignInCustom").style.display = "flex";
+      showToast("Logged out successfully.");
+    }
+
+    function parseJwt(token) {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      return JSON.parse(jsonPayload);
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+  </script>
+</body>
+</html>
