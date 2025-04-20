@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Certificate Verification System</title>
+  <!-- For Solana blockchain interaction -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/solana-web3.js/1.73.0/index.iife.min.js"></script>
+  <!-- For handling crypto operations -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tweetnacl/1.0.3/nacl-fast.min.js"></script>
+  <!-- For Google Drive API -->
+  <script src="https://apis.google.com/js/api.js"></script>
+  <script src="https://accounts.google.com/gsi/client"></script>
+  <script
+  type="module"
+  src="https://unpkg.com/@splinetool/viewer@1.9.82/build/spline-viewer.js"
+></script>
+<link
+  href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.2/dist/tailwind.min.css"
+  rel="stylesheet"
+/>
+<style>
+    .background{
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+transform: scale(1.2);
+z-index:0 ;
+}
+</style>
+  <style>
+    .uploadingdocs * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body, html {
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    .uploadingdocs-body {
+      min-height: 100vh;
+      min-width: 100vw;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 8px;
+      background: none;
+      position: relative;
+      z-index: 1;
+    }
+
+    .uploadingdocs-container {
+      width: 100%;
+      max-width: 380px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.78) 65%, rgba(245,245,245,0.85) 100%);
+      border-radius: 18px;
+      box-shadow: 0 4px 16px 0 rgba(60, 60, 60, 0.14), 0 1px 4px 0 rgba(255,255,255,0.12);
+      backdrop-filter: blur(13px) saturate(110%);
+      -webkit-backdrop-filter: blur(13px) saturate(110%);
+      border: 1.2px solid rgba(220, 220, 220, 0.22);
+      overflow: hidden;
+      margin: 0 auto;
+      position: relative;
+    }
+    .uploadingdocs-container::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.22;
+      background: url('data:image/svg+xml;utf8,<svg width="400" height="400" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2"/></filter><rect width="400" height="400" filter="url(%23noise)"/></svg>');
+    }
+
+    .uploadingdocs-header {
+      padding: 18px 12px 12px 12px;
+      background: linear-gradient(90deg, rgba(183,246,236,0.22) 0%, rgba(255,255,255,0.94) 100%);
+      color: #232323;
+      text-align: center;
+      border-bottom: 1px solid rgba(225,225,225,0.33);
+      border-radius: 18px 18px 0 0;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      box-shadow: 0 1px 4px rgba(240,240,240,0.07);
+      position: relative;
+    }
+
+    .uploadingdocs-h1 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #11998e;
+      margin-bottom: 2px;
+      letter-spacing: 0.01em;
+      text-shadow: 0 1px 2px rgba(255,255,255,0.13);
+      background: linear-gradient(90deg,#11998e,#38ef7d);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .uploadingdocs-upload-container {
+      padding: 14px 10px 12px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .uploadingdocs-drop-area {
+      border: 1.5px dashed #7de2d1;
+      border-radius: 10px;
+      padding: 18px 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(.4,0,.2,1);
+      background: linear-gradient(135deg, rgba(183,246,236,0.13) 0%, rgba(255,255,255,0.45) 100%);
+      backdrop-filter: blur(2.5px);
+      margin-bottom: 0;
+      box-shadow: 0 1px 4px rgba(120,120,120,0.03);
+      color: #11998e;
+      font-size: 0.98rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .uploadingdocs-drop-area.active {
+      border-color: #11998e;
+      background: linear-gradient(135deg, rgba(183,246,236,0.23) 0%, rgba(255,255,255,0.65) 100%);
+    }
+
+    .uploadingdocs-upload-icon {
+      width: 32px;
+      height: 32px;
+      margin: 0 auto 6px;
+      background: linear-gradient(135deg, #b7f6ec 0%, #fff 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 1px 2px rgba(160,160,160,0.06);
+      border: 1.5px solid #7de2d1;
+    }
+
+    .uploadingdocs-upload-icon svg {
+      width: 18px;
+      height: 18px;
+      fill: #11998e;
+      opacity: 0.92;
+    }
+
+    .uploadingdocs-drop-message {
+      font-size: 1rem;
+      color: #11998e;
+      margin-bottom: 6px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      text-shadow: 0 1px 2px rgba(255,255,255,0.11);
+    }
+
+    .uploadingdocs-file-info {
+      font-size: 0.88rem;
+      color: #11998e;
+      margin-top: 2px;
+      font-weight: 500;
+    }
+
+    .uploadingdocs-file-selected {
+      background: linear-gradient(90deg, #e0fffa 0%, #fff 100%);
+      border: 1.2px solid #b7f6ec;
+      border-radius: 8px;
+      padding: 8px 6px;
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 1px 2px rgba(120,120,120,0.03);
+      display: none;
+    }
+
+    .uploadingdocs-file-selected.show {
+      display: flex;
+    }
+
+    .uploadingdocs-file-icon {
+      color: #0284c7;
+      margin-right: 12px;
+    }
+
+    .uploadingdocs-file-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: #334155;
+      flex-grow: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .uploadingdocs-buttons {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .uploadingdocs-btn {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      flex: 1;
+    }
+
+    .uploadingdocs-btn-upload {
+      background-color: #f3f4f6;
+      color: #4b5563;
+    }
+
+    .uploadingdocs-btn-upload:hover {
+      background-color: #e5e7eb;
+    }
+
+    .uploadingdocs-btn-verify {
+      background-color: #4b50e6;
+      color: white;
+    }
+
+    .uploadingdocs-btn-verify:hover {
+      background-color: #4045cc;
+    }
+
+    .uploadingdocs-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .uploadingdocs-progress-section {
+      margin-top: 24px;
+      display: none;
+    }
+
+    .uploadingdocs-progress-section.show {
+      display: block;
+    }
+
+    .uploadingdocs-progress-title {
+      font-size: 16px;
+      font-weight: 500;
+      color: #334155;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .uploadingdocs-status {
+      font-size: 14px;
+      color: #6b7280;
+    }
+
+    .uploadingdocs-status.success {
+      color: #16a34a;
+    }
+
+    .uploadingdocs-status.error {
+      color: #dc2626;
+    }
+
+    .uploadingdocs-progress-bar {
+      height: 8px;
+      background-color: #e5e7eb;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .uploadingdocs-progress-fill {
+      height: 100%;
+      background-color: #4b50e6;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .uploadingdocs-progress-steps {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+      position: relative;
+    }
+
+    .uploadingdocs-progress-steps:before {
+      content: '';
+      position: absolute;
+      top: 12px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background-color: #d1d5db;
+      z-index: 1;
+    }
+
+    .uploadingdocs-step {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      flex: 1;
+    }
+
+    .uploadingdocs-step-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background-color: #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 8px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .uploadingdocs-step.active .uploadingdocs-step-icon {
+      background-color: #4b50e6;
+      color: white;
+    }
+
+    .uploadingdocs-step.completed .uploadingdocs-step-icon {
+      background-color: #16a34a;
+      color: white;
+    }
+
+    .uploadingdocs-step-label {
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    .uploadingdocs-step.active .uploadingdocs-step-label {
+      color: #334155;
+      font-weight: 500;
+    }
+
+    .uploadingdocs-step.completed .uploadingdocs-step-label {
+      color: #16a34a;
+    }
+
+    .uploadingdocs-input-file {
+      display: none;
+    }
+
+    /* Added wallet connection section */
+    .uploadingdocs-wallet-section {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      background-color: #f9fafb;
+      border: 1px solid #e5e7eb;
+      display: none;
+    }
+
+    .uploadingdocs-wallet-section.show {
+      display: block;
+    }
+
+    .uploadingdocs-connect-wallet {
+      background-color: #10b981;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      display: block;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    .uploadingdocs-connect-wallet:hover {
+      background-color: #059669;
+    }
+
+    .uploadingdocs-wallet-status {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #6b7280;
+    }
+
+    @media (max-width: 500px) {
+      .uploadingdocs-buttons {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a href="../index1.html" id="home-btn" style="position:fixed;top:18px;right:30px;z-index:1100;background:#23272f;color:#fff;padding:10px 22px;border-radius:8px;font-weight:600;font-size:1.05em;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,0.13);transition:background 0.2s;letter-spacing:0.5px;">
+    <i class="fas fa-home" style="margin-right:8px;"></i>Home
+  </a>
+
+  <div >
+    <spline-viewer class="background" url="https://prod.spline.design/puFUIzxwjfXJWBnn/scene.splinecode"></spline-viewer>
+  </div>
+  <div class="uploadingdocs">
+    <div class="uploadingdocs-container">
+      <div class="uploadingdocs-header">
+        <h1 class="uploadingdocs-h1">Certificate Verification System</h1>
+      </div>
+      <div class="uploadingdocs-upload-container">
+        <div id="uploadingdocs-drop-area" class="uploadingdocs-drop-area">
+          <div class="uploadingdocs-upload-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+              <path d="M11 14.9861C11 15.5384 11.4477 15.9861 12 15.9861C12.5523 15.9861 13 15.5384 13 14.9861V7.82831L16.2428 11.0711L17.657 9.65685L12.0001 4L6.34326 9.65685L7.75748 11.0711L11 7.82854V14.9861Z" />
+              <path d="M4 14H6V18H18V14H20V18C20 19.1046 19.1046 20 18 20H6C4.89543 20 4 19.1046 4 18V14Z" />
+            </svg>
+          </div>
+          <p class="uploadingdocs-drop-message">Drag and drop your certificate here</p>
+          <p class="uploadingdocs-file-info">or click to upload</p>
+          <input type="file" id="uploadingdocs-file-input" class="uploadingdocs-input-file" accept=".pdf,.jpg,.jpeg,.png">
+        </div>
+
+        <div id="uploadingdocs-file-selected" class="uploadingdocs-file-selected">
+          <div class="uploadingdocs-file-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+          </div>
+          <div id="uploadingdocs-file-name" class="uploadingdocs-file-name"></div>
+        </div>
+
+        <!-- Added wallet connection section -->
+        <div id="uploadingdocs-wallet-section" class="uploadingdocs-wallet-section">
+          <div class="uploadingdocs-wallet-title">Connect your Solana wallet to verify certificates</div>
+          <button id="uploadingdocs-connect-wallet" class="uploadingdocs-connect-wallet">Connect Wallet</button>
+          <div id="uploadingdocs-wallet-status" class="uploadingdocs-wallet-status">Not connected</div>
+        </div>
+
+        <div class="uploadingdocs-buttons">
+          <button id="uploadingdocs-btn-upload" class="uploadingdocs-btn uploadingdocs-btn-upload">Upload</button>
+          <button id="uploadingdocs-btn-verify" class="uploadingdocs-btn uploadingdocs-btn-verify" disabled>Verify</button>
+        </div>
+
+        <div id="uploadingdocs-progress-section" class="uploadingdocs-progress-section">
+          <div class="uploadingdocs-progress-title">
+            <span>Verification Progress</span>
+            <span id="uploadingdocs-status" class="uploadingdocs-status">Processing...</span>
+          </div>
+          <div class="uploadingdocs-progress-bar">
+            <div id="uploadingdocs-progress-fill" class="uploadingdocs-progress-fill"></div>
+          </div>
+
+          <div class="uploadingdocs-progress-steps">
+            <div id="uploadingdocs-step-upload" class="uploadingdocs-step">
+              <div class="uploadingdocs-step-icon">1</div>
+              <div class="uploadingdocs-step-label">Upload</div>
+            </div>
+            <div id="uploadingdocs-step-verify" class="uploadingdocs-step">
+              <div class="uploadingdocs-step-icon">2</div>
+              <div class="uploadingdocs-step-label">Blockchain Verification</div>
+            </div>
+            <div id="uploadingdocs-step-store" class="uploadingdocs-step">
+              <div class="uploadingdocs-step-icon">3</div>
+              <div class="uploadingdocs-step-label">Store to Drive</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Solana configuration
+      const solanaConfig = {
+        programId: 'ABN4fC5tfSBRVyGkew5WkUS8nUtdKctsd1S9vjrH7KCi',
+        network: 'devnet',
+        keypair: null 
+      };
+      
+      // Google Drive API configuration
+      const googleDriveConfig = {
+        apiKey: 'AIzaSyAu0yZVNl9GzKKkyhHhJxpmJb-bKSdKob0',
+        clientId: '798236020770-92k9r7j0re9bcgrjoij85frc3gu88nno.apps.googleusercontent.com',
+        scopes: 'https://www.googleapis.com/auth/drive.file'
+      };
+
+      // DOM Elements
+      const dropArea = document.getElementById('uploadingdocs-drop-area');
+      const fileInput = document.getElementById('uploadingdocs-file-input');
+      const fileSelected = document.getElementById('uploadingdocs-file-selected');
+      const fileName = document.getElementById('uploadingdocs-file-name');
+      const uploadBtn = document.getElementById('uploadingdocs-btn-upload');
+      const verifyBtn = document.getElementById('uploadingdocs-btn-verify');
+      const progressSection = document.getElementById('uploadingdocs-progress-section');
+      const progressFill = document.getElementById('uploadingdocs-progress-fill');
+      const status = document.getElementById('uploadingdocs-status');
+      const stepUpload = document.getElementById('uploadingdocs-step-upload');
+      const stepVerify = document.getElementById('uploadingdocs-step-verify');
+      const stepStore = document.getElementById('uploadingdocs-step-store');
+      const walletSection = document.getElementById('uploadingdocs-wallet-section');
+      const connectWalletBtn = document.getElementById('uploadingdocs-connect-wallet');
+      const walletStatus = document.getElementById('uploadingdocs-wallet-status');
+      
+      let selectedFile = null;
+      let solanaConnection = null;
+      let solanaWallet = null;
+      let fileHash = null;
+      let googleAuth = null;
+      let googleToken = null;
+
+      // Initialize Solana connection
+      function initSolanaConnection() {
+        try {
+          // Create connection to Solana network
+          return new solanaWeb3.Connection(
+            solanaWeb3.clusterApiUrl(solanaConfig.network)
+          );
+        } catch (error) {
+          console.error("Failed to initialize Solana connection:", error);
+          return null;
+        }
+      }
+
+      // Connect to Solana wallet (Phantom)
+      async function connectSolanaWallet() {
+        try {
+          walletStatus.textContent = "Connecting...";
+          
+          // Check if Phantom wallet is available
+          const isPhantomInstalled = window.solana && window.solana.isPhantom;
+          
+          if (!isPhantomInstalled) {
+            walletStatus.textContent = "Phantom wallet not detected! Please install it.";
+            return null;
+          }
+          
+          try {
+            const resp = await window.solana.connect();
+            walletStatus.textContent = `Connected: ${resp.publicKey.toString().substring(0, 8)}...`;
+            return resp;
+          } catch (err) {
+            walletStatus.textContent = `Error connecting: ${err.message}`;
+            return null;
+          }
+        } catch (error) {
+          console.error("Failed to connect to Solana wallet:", error);
+          walletStatus.textContent = "Connection failed!";
+          return null;
+        }
+      }
+
+      // Initialize Google Drive API
+      function initGoogleDriveAPI() {
+        return new Promise((resolve, reject) => {
+          gapi.load('client:auth2', () => {
+            gapi.client.init({
+              apiKey: googleDriveConfig.apiKey,
+              clientId: googleDriveConfig.clientId,
+              scope: googleDriveConfig.scopes,
+              discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']
+            }).then(() => {
+              console.log("Google API initialized");
+              resolve(true);
+            }).catch(error => {
+              console.error("Google API initialization failed:", error);
+              reject(error);
+            });
+          });
+        });
+      }
+
+      // Authenticate with Google
+      async function authenticateWithGoogle() {
+        try {
+          status.textContent = "Authenticating with Google...";
+          
+          const authInstance = gapi.auth2.getAuthInstance();
+          const isSignedIn = authInstance.isSignedIn.get();
+          
+          if (!isSignedIn) {
+            await authInstance.signIn();
+          }
+          
+          const currentUser = authInstance.currentUser.get();
+          const authResponse = currentUser.getAuthResponse(true);
+          return authResponse.access_token;
+        } catch (error) {
+          console.error("Google authentication failed:", error);
+          status.textContent = "Google authentication failed!";
+          status.className = 'uploadingdocs-status error';
+          return null;
+        }
+      }
+
+      // Process file to get hash
+      async function processFile(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          
+          reader.onload = async (event) => {
+            try {
+              const arrayBuffer = event.target.result;
+              const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+              const hashArray = Array.from(new Uint8Array(hashBuffer));
+              const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+              resolve(hashHex);
+            } catch (error) {
+              reject(error);
+            }
+          };
+          
+          reader.onerror = () => {
+            reject(new Error("File reading failed"));
+          };
+          
+          reader.readAsArrayBuffer(file);
+        });
+      }
+
+      // Verify certificate on Solana blockchain
+      async function verifyCertificateOnBlockchain(fileHash) {
+        try {
+          if (!solanaConnection || !solanaWallet) {
+            throw new Error("Solana connection or wallet not initialized");
+          }
+          
+          // Create a transaction to store the certificate hash
+          const transaction = new solanaWeb3.Transaction().add(
+            solanaWeb3.SystemProgram.transfer({
+              fromPubkey: solanaWallet.publicKey,
+              toPubkey: solanaWallet.publicKey, // Just sending to self as a demo
+              lamports: 100, // Minimal amount
+            })
+          );
+          
+          // Add memo with the file hash
+          transaction.add(
+            new solanaWeb3.TransactionInstruction({
+              keys: [],
+              programId: new solanaWeb3.PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr'),
+              data: Buffer.from(fileHash, 'utf8')
+            })
+          );
+
+          // Sign and send the transaction
+          const signature = await solanaWeb3.sendAndConfirmTransaction(
+            solanaConnection,
+            transaction,
+            [solanaWallet]
+          );
+          
+          return signature;
+        } catch (error) {
+          console.error("Blockchain verification error:", error);
+          throw error;
+        }
+      }
+
+      // Upload to Google Drive
+      async function uploadFileToGoogleDrive(file, metadata) {
+        try {
+          if (!googleToken) {
+            throw new Error("Not authenticated with Google");
+          }
+          
+          const fileMetadata = {
+            name: file.name,
+            description: `Blockchain verified: ${metadata.signature}`
+          };
+          
+          const form = new FormData();
+          form.append('metadata', new Blob([JSON.stringify(fileMetadata)], {type: 'application/json'}));
+          form.append('file', file);
+          
+          const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${googleToken}`
+            },
+            body: form
+          });
+          
+          if (!response.ok) {
+            throw new Error(`Google Drive upload failed: ${response.statusText}`);
+          }
+          
+          const result = await response.json();
+          return result.id;
+        } catch (error) {
+          console.error("Google Drive upload error:", error);
+          throw error;
+        }
+      }
+
+      // Display wallet section after page load
+      walletSection.classList.add('show');
+      
+      // Initialize Solana connection
+      solanaConnection = initSolanaConnection();
+      
+      // Try to initialize Google Drive API
+      initGoogleDriveAPI().catch(console.error);
+      
+      // Connect wallet button event
+      connectWalletBtn.addEventListener('click', async function() {
+        solanaWallet = await connectSolanaWallet();
+      });
+
+      // Prevent default drag behaviors
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, preventDefaults, false);
+        document.body.addEventListener(eventName, preventDefaults, false);
+      });
+
+      // Highlight drop area when item is dragged over it
+      ['dragenter', 'dragover'].forEach(eventName => {
+        dropArea.addEventListener(eventName, highlight, false);
+      });
+
+      ['dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, unhighlight, false);
+      });
+
+      // Handle dropped files
+      dropArea.addEventListener('drop', handleDrop, false);
+      
+      // Handle file selection
+      fileInput.addEventListener('change', handleFiles, false);
+      
+      // Upload button click
+      uploadBtn.addEventListener('click', function() {
+        fileInput.click();
+      });
+      
+      // Click on drop area
+      dropArea.addEventListener('click', function() {
+        fileInput.click();
+      });
+      
+      // Verify button click
+      verifyBtn.addEventListener('click', verifyFile);
+
+      function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
+      function highlight() {
+        dropArea.classList.add('active');
+      }
+
+      function unhighlight() {
+        dropArea.classList.remove('active');
+      }
+
+      function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        
+        if (files.length) {
+          selectedFile = files[0];
+          updateFileInfo();
+        }
+      }
+
+      function handleFiles(e) {
+        if (fileInput.files.length) {
+          selectedFile = fileInput.files[0];
+          updateFileInfo();
+        }
+      }
+
+      function updateFileInfo() {
+        if (selectedFile) {
+          fileName.textContent = selectedFile.name;
+          fileSelected.classList.add('show');
+          verifyBtn.disabled = !solanaWallet;
+        } else {
+          fileSelected.classList.remove('show');
+          verifyBtn.disabled = true;
+        }
+      }
+
+      async function verifyFile() {
+        if (!selectedFile || !solanaWallet) return;
+        
+        progressSection.classList.add('show');
+        verifyBtn.disabled = true;
+        uploadBtn.disabled = true;
+        
+        // Reset steps
+        stepUpload.className = 'uploadingdocs-step';
+        stepVerify.className = 'uploadingdocs-step';
+        stepStore.className = 'uploadingdocs-step';
+        
+        try {
+          // Step 1: Upload - Start the process
+          stepUpload.className = 'uploadingdocs-step active';
+          status.textContent = 'Processing certificate...';
+          status.className = 'uploadingdocs-status';
+          progressFill.style.width = '10%';
+          
+          // Process file to get hash
+          fileHash = await processFile(selectedFile);
+          console.log("File hash:", fileHash);
+          progressFill.style.width = '33%';
+          stepUpload.className = 'uploadingdocs-step completed';
+          
+          // Step 2: Blockchain Verification
+          stepVerify.className = 'uploadingdocs-step active';
+          status.textContent = 'Verifying on Solana blockchain...';
+          progressFill.style.width = '45%';
+          
+          // Verify on blockchain
+          const signature = await verifyCertificateOnBlockchain(fileHash);
+          console.log("Blockchain verification success:", signature);
+          progressFill.style.width = '66%';
+          stepVerify.className = 'uploadingdocs-step completed';
+          
+          // Step 3: Store to Google Drive
+          stepStore.className = 'uploadingdocs-step active';
+          status.textContent = 'Authenticating with Google Drive...';
+          progressFill.style.width = '75%';
+          
+          // Authenticate with Google
+          googleToken = await authenticateWithGoogle();
+          
+          if (googleToken) {
+            status.textContent = 'Uploading to Google Drive...';
+            progressFill.style.width = '85%';
+            
+            // Upload to Google Drive
+            const fileId = await uploadFileToGoogleDrive(selectedFile, { signature, fileHash });
+            console.log("File uploaded to Google Drive:", fileId);
+            
+            // Complete the process
+            progressFill.style.width = '100%';
+            stepStore.className = 'uploadingdocs-step completed';
+            status.textContent = 'Certificate verified and stored successfully!';
+            status.className = 'uploadingdocs-status success';
+          } else {
+            throw new Error("Google authentication failed");
+          }
+        } catch (error) {
+          console.error("Verification process error:", error);
+          status.textContent = `Process failed: ${error.message}`;
+          status.className = 'uploadingdocs-status error';
+        } finally {
+          // Enable buttons again
+          setTimeout(() => {
+            verifyBtn.disabled = !solanaWallet;
+            uploadBtn.disabled = false;
+          }, 1500);
+        }
+      }
+    });
+  </script>
+</body>
+</html>
